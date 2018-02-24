@@ -1,0 +1,28 @@
+{
+  "name": "bamazon",
+  "version": "1.0.0",
+  "description": "A commandline version of amazon that allows users to see the see and purchase inventory and managers to enter in inventory",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gperry22/Bamazon.git"
+  },
+  "keywords": [
+    "bamazon"
+  ],
+  "author": "Gabe Perry",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Gperry22/Bamazon/issues"
+  },
+  "homepage": "https://github.com/Gperry22/Bamazon#readme",
+  "dependencies": {
+    "clear": "0.0.1",
+    "dotenv": "^5.0.0",
+    "inquirer": "^5.1.0",
+    "mysql": "^2.15.0"
+  }
+}
