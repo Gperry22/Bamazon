@@ -4,19 +4,11 @@ var mysql = require("mysql");
 var inquirer = require("inquirer");
 var clear = require("clear");
 
-// var connection = mysql.createConnection({
-//   host: process.env.DB_HOST,
-//   port: process.env.DB_PORT,
-//   user: process.env.DB_USER,
-//   password: process.env.DB_PW,
-//   database: "bamazon_DB"
-// });
-
 var connection = mysql.createConnection({
-  host: "localhost",
-  port: 3306,
-  user: "root",
-  password: "",
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PW,
   database: "bamazon_DB"
 });
 
@@ -79,6 +71,7 @@ function getDeptTotalSales() {
             res[i].total_profit
         );     
       }
+      start();
     }
   );
 }
@@ -94,25 +87,56 @@ function createDept() {
       {
         name: "dept",
         type: "input",
-        message: "Enter the Name of the Dept to create."
+        message:
+          "Enter the Name of the Dept to create. Must be more than 1 Letter to continue.",
+        validate: function(value) {
+          if (value.length > 1) {
+            return true;
+          }
+          return false;
+        }
       }
-
     ])
     .then(function(answer) {
-      var dept = answer.dept;
-      var query = connection.query(
-        "INSERT INTO departments SET ?",
-        {
-          department_name: dept,
-          over_head_cost: 0.00,
-          product_sales: 0.0,
-          total_profit: 0.0
-        },
-        function(err, res) {
+      var dept = answer.dept.toUpperCase();
+
+      checkDept(dept);
+      // CHECKS IF THERE IS A CURRENT DEPARTMENT ALREADY CREATED
+      function checkDept(dept) {
+        connection.query("SELECT department_name FROM departments", function(
+          err,
+          results
+        ) {
           if (err) throw err;
-          console.log(res.affectedRows + " Dept inserted in Departments\n");          
-        }
-      );
+          var choiceArray = [];
+          for (let i = 0; i < results.length; i++) {
+            choiceArray.push(results[i].department_name);
+          }
+          if (!choiceArray.includes(dept)) {
+            console.log(
+              "There is not department by this name and it will now be created."
+            );
+            connection.query(
+              "INSERT INTO departments SET ?",
+              {
+                department_name: dept,
+                over_head_cost: 0.0,
+                product_sales: 0.0,
+                total_profit: 0.0
+              },
+              function(err, res) {
+                if (err) throw err;
+                console.log(
+                  res.affectedRows + " Dept inserted in Departments\n");
+                start();
+              }
+            );
+          } else {
+            console.log(dept +" is already current department. Please restart and try again.");
+              start();
+            }
+        });
+      }
     });
 }
 //**********************************************************************************************************//

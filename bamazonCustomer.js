@@ -6,21 +6,15 @@ var clear = require("clear");
 var itemsNumber = 0;
 
 
-// var connection = mysql.createConnection({
-//   host: process.env.DB_HOST,
-//   port: process.env.DB_PORT,
-//   user: process.env.DB_USER,
-//   password: process.env.DB_PW,
-//   database: "bamazon_DB"
-// });
 
 var connection = mysql.createConnection({
-  host: "localhost",
-  port: 3306,
-  user: "root",
-  password: "",
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PW,
   database: "bamazon_DB"
 });
+
 
 connection.connect(function (err) {
   if (err) throw err;
@@ -124,7 +118,7 @@ function purchaseItem() {
 
 //CHECKS STOCK OF ITEM
 function checkAmountInStock(itemUserWants, amountUserWants) {
-  var query = "SELECT price,stock_quantity,department_name FROM products WHERE ?";
+  var query = "SELECT price,stock_quantity,department_name FROM products WHERE ?"; 
   connection.query(query, { item_id: itemUserWants }, function (err, res) {
     if (err) throw err;
     
@@ -140,7 +134,7 @@ function checkAmountInStock(itemUserWants, amountUserWants) {
         return true;
       } else {
         console.log(
-          `I'm sorry we don't have ${AmountUserWants} quantities of this item in stock. We only have ${amountOnHand} in stock. Please chose a lower amount.`
+          `I'm sorry we don't have ${amountUserWants} quantities of this item in stock. We only have ${amountOnHand} in stock. Please chose a lower amount.`
         );
         purchaseItem();
         return false;
@@ -249,7 +243,7 @@ function getTotalProductSales(dept) {
     for (let i = 0; i < res.length; i++) {
       totalProductSales = res[i].totalProductSales;
     }
-    // console.log("Total product sales for " + dept + " is: " + totalProductSales);
+    console.log("Total product sales for " + dept + " is: " + totalProductSales);
     updateProductSales(dept, totalProductSales)
   })
 }
@@ -263,7 +257,7 @@ function updateProductSales(dept, totalProductSales) {
       { department_name: dept }
     ], function (err, res) {
       if (err) throw err;
-      // console.log(res.affectedRows + " The total product sales for " + dept + " has been updated in the Departments Table to: " + totalProductSales + " !\n");
+      console.log(res.affectedRows + " The total product sales for " + dept + " has been updated in the Departments Table to: " + totalProductSales + " !\n");
       getTotalStock(dept, totalProductSales)
     })
 }
@@ -276,7 +270,7 @@ function getTotalStock(dept, totalProductSales) {
     for (let i = 0; i < res.length; i++) {
       totalStock = res[i].totalStock;
     }
-    // console.log("Total stock for " + dept + "is: " + totalStock);
+    console.log("Total stock for " + dept + " is: " + totalStock);
     getTotalPurchasedPrice(dept, totalProductSales, totalStock)
   })
 }
@@ -294,8 +288,8 @@ function getTotalPurchasedPrice(dept, totalProductSales, totalStock) {
     overheadCost = parseFloat(totalStock * totalPurPrice);
     totalProfit = parseFloat(totalProductSales-overheadCost).toFixed(2);
     Math.sign(totalProfit); 
-    // console.log("Total overhead cost for " + dept + " is: " + overheadCost.toFixed(2));
-    // console.log("Total Profit for " + dept + " is: " + totalProfit);
+    console.log("Total overhead cost for " + dept + " is: " + overheadCost.toFixed(2));
+    console.log("Total Profit for " + dept + " is: " + totalProfit);
     updateTotalProfit(dept, totalProfit, overheadCost)
   })
 }
@@ -309,7 +303,7 @@ function updateTotalProfit(dept, totalProfit, overheadCost) {
       { department_name: dept }
     ], function (err, res) {
       if (err) throw err;
-      // console.log(res.affectedRows + " The total profit for " + dept + " has been updated in the Departments Table to: " + totalProfit + " !\n");
+      console.log(res.affectedRows + " The total profit for " + dept + " has been updated in the Departments Table to: " + totalProfit + " !\n");
     })
 }
 //**********************************************************************************************************//

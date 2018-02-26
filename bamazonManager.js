@@ -5,19 +5,12 @@ var inquirer = require("inquirer");
 var clear = require("clear");
 var itemsNumber = 0;
 
-// var connection = mysql.createConnection({
-//     host: process.env.DB_HOST,
-//     port: process.env.DB_PORT,
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PW,
-//     database: "bamazon_DB"
-// });
 var connection = mysql.createConnection({
-  host: "localhost",
-  port: 3306,
-  user: "root",
-  password: "",
-  database: "bamazon_DB"
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PW,
+    database: "bamazon_DB"
 });
 
 
@@ -33,34 +26,34 @@ connection.connect(function (err) {
 //**********************************************************************************************************//
 function start() {
     inquirer
-        .prompt({
-            name: "choice",
-            type: "list",
-            message: "What would you like to do?",
-            choices: [
-                "View Products for Sale",
-                "View Low Inventory Less than 30 items in stock",
-                "Add to Inventory Quantity",
-                "Add New Product"
-            ]
-        })
-        .then(function (answer) {
-            switch (answer.choice) {
-                case "View Products for Sale":
-                    viewAll();
-                    break;
-                case "View Low Inventory Less than 30 items in stock":
-                    viewLowInv();
-                    break;
-                case "Add to Inventory Quantity":
-                    // viewAll();
-                    addToInv();
-                    break;
-                case "Add New Product":
-                    addNewProduct();
-                    break;
-            }
-        });
+      .prompt({
+        name: "choice",
+        type: "list",
+        message: "What would you like to do?",
+        choices: [
+          "View Products for Sale",
+          "View Low Inventory Less than 30 items in stock",
+          "Update current Items Stock Quantity",
+          "Add New Product to Current Dept"
+        ]
+      })
+      .then(function(answer) {
+        switch (answer.choice) {
+          case "View Products for Sale":
+            viewAll();
+            break;
+          case "View Low Inventory Less than 30 items in stock":
+            viewLowInv();
+            break;
+          case "Update current Items Stock Quantity":
+            // viewAll();
+            addToInv();
+            break;
+          case "Add New Product to Current Dept":
+            addNewProduct();
+            break;
+        }
+      });
 }
 //**********************************************************************************************************//
 //END OF FUNCTION
@@ -75,8 +68,8 @@ function viewAll() {
         if (err) throw err;
         for (let i = 0; i < results.length; i++) {
             console.log("Item " + results[i].item_id + "|  Dept Name: " + results[i].department_name + "|  Product Name: " + results[i].product_name + "|  Price: " + results[i].price + "|  In Stock: " + results[i].stock_quantity);
-
         }
+        connection.end();
     });
 }
 //**********************************************************************************************************//
@@ -109,96 +102,133 @@ function viewLowInv() {
 //CALLS FOR FUNCTIONS LISTED AT THE BOTTOM OF PAGE: 
 function addToInv() {
     inquirer
-        .prompt([
-            {
-                name: "dept",
-                type: "input",
-                message: "Enter the Department of the Item to update.\n\n",
-            },
-            {
-                name: "item",
-                type: "input",
-                message: "Enter the Item ID of the product to update.\n\n",
-                validate: function (value) {
-                    if (isNaN(value) === false && value >= 1 && value <= itemsNumber) {
-                        return true;
-                    }
-                    return false;
-                }
-            },
-            {
-                name: "quantity",
-                type: "input",
-                message: "Enter the New quantity amount.",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    }
-                    return false;
-                }
+      .prompt([
+        {
+          name: "dept",
+          type: "input",
+          message:"Enter the Department of the Item to update. Must be a current Dept or stock will not be updated..\n\n",
+          validate: function(value) {
+            if (value.length > 1) {
+              return true;
             }
-        ])
-        .then(function (answer) {
-            var itemIdToUpdateStock = parseInt(answer.item);
-            var itemQuantity = parseInt(answer.quantity);
-            var dept = answer.dept.toUpperCase();
-
-            checkDept(dept, itemIdToUpdateStock, itemQuantity)
-            // CHECKS IF THERE IS A CURRENT DEPARTMENT TO UPDATE AN ITEMS STOCK QUANTITY
-            function checkDept(dept, itemIdToUpdateStock, itemQuantity) {
-                connection.query("SELECT department_name FROM departments", function (err, results) {
-                    if (err) throw err;
-                    var choiceArray = [];
-                    for (let i = 0; i < results.length; i++) {
-                        choiceArray.push(results[i].department_name)
-                    }
-                    if (choiceArray.includes(dept)) {
-                        console.log("The department entered is a valid department.");
-                        checkItemID(dept, itemIdToUpdateStock, itemQuantity)
-                    } else {
-                        console.log(dept + " is not a current department. Please restart and try again.");
-                    }
-                })
+            return false;
+          }
+        },
+        {
+          name: "item",
+          type: "input",
+          message: "Enter the Item ID of the product to update.\n\n",
+          validate: function(value) {
+            if (
+              isNaN(value) === false &&
+              value >= 1 &&
+              value <= itemsNumber
+            ) {
+              return true;
             }
-
-
-            // IF THERE IS A CURRENT DEPARTMENT, CHECKS TO MAKE SURE ITEM_ID TO UPDATE IS IN THE DEPT
-            function checkItemID(dept, itemIdToUpdateStock, itemQuantity) {
-                connection.query("SELECT * FROM products WHERE department_name = ?", [dept], function (err, results) {
-                    if (err) throw err;
-                    var choiceArray = [];
-                    for (let i = 0; i < results.length; i++) {
-                        choiceArray.push(results[i].item_id)
-                    }
-                    console.log("The item to update is " + itemIdToUpdateStock);
-                    if (choiceArray.includes(itemIdToUpdateStock)) {
-                        console.log("Item to update is associated with the " + dept + " department");
-                        updateStock(dept, itemQuantity, itemIdToUpdateStock)
-                    } else {
-                        console.log("Item_ID: " + itemIdToUpdateStock + " is not associated with the current department. Please restart and try again.");
-                    }
-                })
+            return false;
+          }
+        },
+        {
+          name: "quantity",
+          type: "input",
+          message: "Enter the New stock amount.",
+          validate: function(value) {
+            if (isNaN(value) === false) {
+              return true;
             }
+            return false;
+          }
+        }
+      ])
+      .then(function(answer) {
+        var itemIdToUpdateStock = parseInt(answer.item);
+        var itemQuantity = parseInt(answer.quantity);
+        var dept = answer.dept.toUpperCase();
 
-            // UPDATES THE STOCK QUANTITY FOR THE DEPARTMENT
-            function updateStock(dept, itemQuantity, itemIdToUpdateStock) {
-                connection.query("UPDATE products SET ? WHERE ?",
-                    [
-                        {
-                            stock_quantity: itemQuantity
-                        },
-                        {
-                            item_id: itemIdToUpdateStock
-                        }
-                    ]
-                    , function (err, res) {
-                        if (err) throw err;
-                        console.log(res.affectedRows + " Stock Quantity updated to: " + itemQuantity +" !\n");
-                        getTotalPurchasedPrice(dept)
-                    });
+        checkDept(dept, itemIdToUpdateStock, itemQuantity);
+        // CHECKS IF THERE IS A CURRENT DEPARTMENT TO UPDATE AN ITEMS STOCK QUANTITY
+        function checkDept(dept, itemIdToUpdateStock, itemQuantity) {
+          connection.query(
+            "SELECT department_name FROM departments",
+            function(err, results) {
+              if (err) throw err;
+              var choiceArray = [];
+              for (let i = 0; i < results.length; i++) {
+                choiceArray.push(results[i].department_name);
+              }
+              if (choiceArray.includes(dept)) {
+                console.log(
+                  "The department entered is a valid department."
+                );
+                checkItemID(dept, itemIdToUpdateStock, itemQuantity);
+              } else {
+                console.log(
+                  dept +
+                    " is not a current department. Please restart and try again."
+                );
+                start();
+              }
             }
+          );
+        }
 
-        });
+        // IF THERE IS A CURRENT DEPARTMENT, CHECKS TO MAKE SURE ITEM_ID TO UPDATE IS IN THE DEPT
+        function checkItemID(dept, itemIdToUpdateStock, itemQuantity) {
+          connection.query(
+            "SELECT * FROM products WHERE department_name = ?",
+            [dept],
+            function(err, results) {
+              if (err) throw err;
+              var choiceArray = [];
+              for (let i = 0; i < results.length; i++) {
+                choiceArray.push(results[i].item_id);
+              }
+              console.log("The item to update is " + itemIdToUpdateStock);
+              if (choiceArray.includes(itemIdToUpdateStock)) {
+                console.log(
+                  "Item to update is associated with the " +
+                    dept +
+                    " department"
+                );
+                updateStock(dept, itemQuantity, itemIdToUpdateStock);
+              } else {
+                console.log(
+                  "Item_ID: " +
+                    itemIdToUpdateStock +
+                    " is not associated with the current department. Please restart and try again."
+                );
+                start();
+              }
+            }
+          );
+        }
+
+        // UPDATES THE STOCK QUANTITY FOR THE DEPARTMENT
+        function updateStock(dept, itemQuantity, itemIdToUpdateStock) {
+          connection.query(
+            "UPDATE products SET ? WHERE ?",
+            [
+              {
+                stock_quantity: itemQuantity
+              },
+              {
+                item_id: itemIdToUpdateStock
+              }
+            ],
+            function(err, res) {
+              if (err) throw err;
+              console.log(
+                res.affectedRows +
+                  " Stock Quantity updated to: " +
+                  itemQuantity +
+                  " !\n"
+              );
+              getTotalPurchasedPrice(dept);
+            }
+          );
+        }
+      });
 }
 //**********************************************************************************************************//
 //END OF FUNCTION
@@ -213,86 +243,114 @@ function addToInv() {
 //ADDS ITEMS TO AN ALREADY CREATE DEPARTMENT
 function addNewProduct() {
     inquirer
-        .prompt([
-            {
-                name: "department",
-                type: "input",
-                message: "Enter the department you would like to add a product to.  Must add to Existing department.",
-            },
-            {
-                name: "item",
-                type: "input",
-                message: "Enter the Name of the item to add to inventory.",
-            },
-            {
-                name: "price",
-                type: "input",
-                message: "Enter the price of the item we will sell it for. Must be in the format of 99.99",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    }
-                    return false;
-                }
-            },
-            {
-                name: "quantity",
-                type: "input",
-                message: "Enter the quantity/stock.",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    }
-                    return false;
-                }
-            },
-            {
-                name: "purchasePrice",
-                type: "input",
-                message: "Enter the price we purchase this item for. Must be in the format of 99.99",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    }
-                    return false;
-                }
+      .prompt([
+        {
+          name: "department",
+          type: "input",
+          message:
+            "Enter the department you would like to add a product to.  Must add to Existing department.",
+          validate: function(value) {
+            if (value.length > 1) {
+              return true;
             }
-        ])
-        .then(function (answer) {
-            var itemIdToUpdateStock = answer.item;
-            var dept = answer.department.toUpperCase();
-            var itemPrice = parseFloat(answer.price);
-            var itemQuantity = parseInt(answer.quantity);
-            var purchasePrice = parseFloat(answer.purchasePrice);
-            //CHECKS TO SEE IF THERE IS A VALID DEPT
-            connection.query("SELECT department_name FROM departments", function (err, results) {
-                if (err) throw err;
-                var choiceArray = [];
-                for (let i = 0; i < results.length; i++) {
-                    choiceArray.push(results[i].department_name)
+            return false;
+          }
+        },
+        {
+          name: "item",
+          type: "input",
+          message: "Enter the Name of the item to add to inventory.",
+          validate: function(value) {
+            if (value.length > 1) {
+              return true;
+            }
+            return false;
+          }
+        },
+        {
+          name: "price",
+          type: "input",
+          message:
+            "Enter the price of the item we will sell it for. Must be in the format of 99.99",
+          validate: function(value) {
+            if (isNaN(value) === false) {
+              return true;
+            }
+            return false;
+          }
+        },
+        {
+          name: "quantity",
+          type: "input",
+          message: "Enter the quantity/stock.",
+          validate: function(value) {
+            if (isNaN(value) === false) {
+              return true;
+            }
+            return false;
+          }
+        },
+        {
+          name: "purchasePrice",
+          type: "input",
+          message:
+            "Enter the price we purchase this item for. Must be in the format of 99.99",
+          validate: function(value) {
+            if (isNaN(value) === false) {
+              return true;
+            }
+            return false;
+          }
+        }
+      ])
+      .then(function(answer) {
+        var itemIdToUpdateStock = answer.item;
+        var dept = answer.department.toUpperCase();
+        var itemPrice = parseFloat(answer.price);
+        var itemQuantity = parseInt(answer.quantity);
+        var purchasePrice = parseFloat(answer.purchasePrice);
+        //CHECKS TO SEE IF THERE IS A VALID DEPT
+        connection.query(
+          "SELECT department_name FROM departments",
+          function(err, results) {
+            if (err) throw err;
+            var choiceArray = [];
+            for (let i = 0; i < results.length; i++) {
+              choiceArray.push(results[i].department_name);
+            }
+            if (choiceArray.includes(dept)) {
+              console.log("The department entered is a valid department.");
+              //ADDS PRODUCT TO DEPT
+              connection.query(
+                "INSERT INTO products SET ?",
+                {
+                  product_name: itemIdToUpdateStock,
+                  department_name: dept,
+                  price: itemPrice,
+                  stock_quantity: itemQuantity,
+                  purchased_price: purchasePrice
+                },
+                function(err, res) {
+                  if (err) throw err;
+                  console.log(
+                    res.affectedRows +
+                      " " +
+                      itemIdToUpdateStock +
+                      " product added to department!\n"
+                  );
+                  getTotalPurchasedPrice(dept);
                 }
-                if (choiceArray.includes(dept)) {
-                    console.log("The department entered is a valid department.");
-                    //ADDS PRODUCT TO DEPT
-                    connection.query("INSERT INTO products SET ?",
-                        {
-                            product_name: itemIdToUpdateStock,
-                            department_name: dept,
-                            price: itemPrice,
-                            stock_quantity: itemQuantity,
-                            purchased_price: purchasePrice,
-                        }
-                        , function (err, res) {
-                            if (err) throw err;
-                            console.log(res.affectedRows +" "+ itemIdToUpdateStock + " product added to department!\n");
-                            getTotalPurchasedPrice(dept);
-
-                        });
-                } else {
-                    console.log(dept + " is not a current department. Please restart and try again.");
-                }
-            })
-        })
+              );
+            } else {
+              console.log(
+                dept +
+                  " is not a current department. Please restart and try again."
+              );
+              start();
+            }
+          }
+        );
+      });
 };
 //**********************************************************************************************************//
 //END OF FUNCTION
@@ -403,6 +461,7 @@ function updateTotalProfit(dept, totalProfit, newOHC) {
             if (err) throw err;
             console.log(res.affectedRows + " The total profit for " + dept + " has been updated in the Departments Table to: " + totalProfit + " !\n");
         })
+        connection.end()
 }
 //**********************************************************************************************************//
 //END OF FUNCTION
